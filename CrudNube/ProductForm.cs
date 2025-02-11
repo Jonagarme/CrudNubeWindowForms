@@ -16,6 +16,9 @@ namespace CrudNube
             ConfigureControls();
             LoadCategories();
             LoadProviders();
+
+            LoadNextCode();
+
             lblTitle.Text = "Crear Producto";
             btnSave.Text = "Guardar Producto";
         }
@@ -32,6 +35,8 @@ namespace CrudNube
             lblTitle.Text = "Editar Producto";
             btnSave.Text = "Actualizar Producto";
         }
+
+
 
         private void LoadProductData()
         {
@@ -73,6 +78,8 @@ namespace CrudNube
                 MessageBox.Show($"Error al cargar el producto: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
         private void LoadCategories()
         {
@@ -189,6 +196,57 @@ namespace CrudNube
                 MessageBox.Show($"Error al guardar producto: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void LoadNextCode()
+        {
+            string lastCode = "";
+            try
+            {
+                using (SqlConnection conn = Database.GetConnection())
+                {
+                    conn.Open();
+                    // Tomamos el último código según el orden que prefieras (ej. por ID descendente)
+                    string query = "SELECT TOP 1 Codigo FROM PRODUCTOS ORDER BY ID DESC";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                        {
+                            lastCode = result.ToString(); // Ejemplo: "P006"
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al obtener último código: {ex.Message}");
+            }
+
+            if (!string.IsNullOrEmpty(lastCode))
+            {
+                // Asumimos que el código siempre tiene un prefijo “P” y luego un número
+                // Ejemplo: "P006" --> quitar 'P' y parsear como entero
+                string numericPart = lastCode.Substring(1); // "006"
+                if (int.TryParse(numericPart, out int codeNumber))
+                {
+                    codeNumber++;
+                    // Formateamos el número si deseas ceros a la izquierda (tres dígitos)
+                    // P.ej. pasa de 6 a "006". Si no quieres ceros, usa codeNumber.ToString() normal.
+                    txtCodigo.Text = "P" + codeNumber.ToString("D3");
+                }
+                else
+                {
+                    // Si falla el parseo, das un valor por defecto
+                    txtCodigo.Text = "P001";
+                }
+            }
+            else
+            {
+                // Si la tabla estaba vacía o no se encontró nada, inicias en P001
+                txtCodigo.Text = "P001";
+            }
+        }
+
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
